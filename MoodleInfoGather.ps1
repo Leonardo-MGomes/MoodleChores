@@ -10,7 +10,7 @@ function New-MoodleCredentials {
         [string]$username,
         [SecureString]$password
     )
-    $session = python ./powershell-connector.py login $username $password | ConvertTo-SecureString -AsPlainText
+    $session = (python ./powershell-connector.py login $username $password) | ConvertTo-SecureString -AsPlainText
     $moodle_credentials = @{username=$username; password=$password; session=$session}
     Export-Clixml -Path MoodleCredentials.xml -InputObject $moodle_credentials
 }
