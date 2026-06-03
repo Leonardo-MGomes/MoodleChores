@@ -1,0 +1,3 @@
+[submodule "MoodleDownloader"]
+	path = MoodleDownloader
+	url = https://github.com/Leonardo-MGomes/MoodleDownloader
