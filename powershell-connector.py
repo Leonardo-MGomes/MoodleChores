@@ -50,6 +50,9 @@ def arg_session_valid(auth):
 def arg_course(auth, course_id, update_db = True):
     scraper = Scraper(auth.session, auth)
     course = scraper.create_dataclass(int(course_id))
+    if update_db:
+        db = MoodleDatabase()
+        db.add_course(course)
     return json.dumps(asdict(course), cls=MoodleJsonEncoder)
 
 
