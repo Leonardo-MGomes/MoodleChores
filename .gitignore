@@ -183,4 +183,5 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python,powershell
 
 MoodleCredentials.xml
+MoodleData.sqlite
 uv.lock
