@@ -1,31 +1,53 @@
 #Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
-./.venv/bin/Activate.ps1
+./.venv/Scripts/Activate.ps1
 
 function Get-MoodleCredentials {
+    <#
+    .SYNOPSIS
+        Loads Moodle credentials from the XML.
+    #>
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    param ()
     Import-Clixml -Path MoodleCredentials.xml
 }
 
 function Set-MoodleCredentials {
+    <#
+    .SYNOPSIS
+        Authenticates with Moodle and saves credentials to the XML.
+    #>
+    [CmdletBinding()]
     param (
-        [string]$username,
-        [SecureString]$password
+        [Parameter(Mandatory)] [string]$Username,
+        [Parameter(Mandatory)] [SecureString]$Password
     )
-    $session = (python ./powershell-connector.py login $username ($password | ConvertFrom-SecureString -AsPlainText)) | ConvertTo-SecureString -AsPlainText
-    $moodle_credentials = @{username=$username; password=$password; session=$session}
-    Export-Clixml -Path MoodleCredentials.xml -InputObject $moodle_credentials
+    $session = (python ./powershell-connector.py login $Username ($Password | ConvertFrom-SecureString -AsPlainText)) | ConvertTo-SecureString -AsPlainText
+    Export-Clixml -Path MoodleCredentials.xml -InputObject @{username = $Username; password = $Password; session = $session}
 }
 
 function Update-MoodleCredentials {
+    <#
+    .SYNOPSIS
+        Re-authenticates with Moodle and updates the session in the XML.
+    #>
+    [CmdletBinding()]
     param (
-        [psobject]$moodle_credentials
+        [Parameter(Mandatory)] [psobject]$Credentials
     )
-    Set-MoodleCredentials $moodle_credentials.username $moodle_credentials.password
+    $Credentials.session = (python ./powershell-connector.py login $Credentials.username ($Credentials.password | ConvertFrom-SecureString -AsPlainText)) | ConvertTo-SecureString -AsPlainText
+    Export-Clixml -Path MoodleCredentials.xml -InputObject $Credentials
 }
 
 function Test-MoodleSession {
+    <#
+    .SYNOPSIS
+        Returns $true if the session cookie stored in the given credentials is still valid.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
     param (
-        [PSObject]$moodle_credentials
+        [Parameter(Mandatory)] [psobject]$Credentials
     )
-    $out = python ./powershell-connector.py sessionvalid ($moodle_credentials.session | ConvertFrom-SecureString -AsPlainText)
-    [System.Convert]::ToBoolean($out)
+    [System.Convert]::ToBoolean((python ./powershell-connector.py sessionvalid ($Credentials.session | ConvertFrom-SecureString -AsPlainText)))
 }
