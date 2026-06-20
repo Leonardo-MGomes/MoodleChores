@@ -51,3 +51,69 @@ function Test-MoodleSession {
     )
     [System.Convert]::ToBoolean((python ./powershell-connector.py sessionvalid ($Credentials.session | ConvertFrom-SecureString -AsPlainText)))
 }
+function Get-MoodleCourse {
+    <#
+    .SYNOPSIS
+        Scrapes a course from Moodle and returns it as a PowerShell object.
+    #>
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    param (
+        [Parameter(Mandatory)] [psobject]$Credentials,
+        [Parameter(Mandatory)] [int]$CourseId
+    )
+    $out = python ./powershell-connector.py get-course ($Credentials.session | ConvertFrom-SecureString -AsPlainText) $CourseId
+    Write-Verbose $out
+    $out | ConvertFrom-Json
+}
+
+function Get-IndexedCourses {
+    <#
+    .SYNOPSIS
+        Returns all courses currently indexed in the local SQLite database.
+    #>
+    [CmdletBinding()]
+    [OutputType([psobject[]])]
+    param ()
+    (python ./powershell-connector.py db-courses) | ConvertFrom-Json
+}
+
+function Get-IndexedCourse {
+    <#
+    .SYNOPSIS
+        Returns a single course from the local database by its Moodle course ID.
+    #>
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    param (
+        [Parameter(Mandatory)] [int]$CourseId
+    )
+    Get-IndexedCourses | Where-Object { $_.Id -eq $CourseId }
+}
+
+function Test-IndexedCourse {
+    <#
+    .SYNOPSIS
+        Returns $true if the given course ID is already indexed in the local database.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param (
+        [Parameter(Mandatory)] [int]$CourseId
+    )
+    [System.Convert]::ToBoolean((python ./powershell-connector.py db-check-course $CourseId))
+}
+
+function Add-IndexedCourse {
+    <#
+    .SYNOPSIS
+        Scrapes a course from Moodle, saves it to the local database, and returns it as a PowerShell object.
+    #>
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    param (
+        [Parameter(Mandatory)] [psobject]$Credentials,
+        [Parameter(Mandatory)] [int]$CourseId
+    )
+    (python ./powershell-connector.py db-index-course ($Credentials.session | ConvertFrom-SecureString -AsPlainText) $CourseId) | ConvertFrom-Json
+}

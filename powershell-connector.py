@@ -47,7 +47,7 @@ def arg_session_valid(auth):
 
 @action("get-course")
 @authenticated
-def arg_course(auth, course_id):
+def arg_course(auth, course_id, update_db = True):
     scraper = Scraper(auth.session, auth)
     course = scraper.create_dataclass(int(course_id))
     return json.dumps(asdict(course), cls=MoodleJsonEncoder)
@@ -59,6 +59,27 @@ def arg_login(*var):
     moodle_auth = MoodleAuth(Session(), moodle_credentials=moodle_credentials)
     moodle_session = moodle_auth.login()
     return moodle_session.login_cookies["MoodleSession"]
+
+
+@action("db-courses")
+def arg_db_courses(*var):
+    db = MoodleDatabase()
+    courses = db.from_database_to_object()
+    return json.dumps([asdict(c) for c in courses], cls=MoodleJsonEncoder)
+
+
+@action("db-index-course")
+@authenticated
+def arg_db_index_course(auth, course_id):
+    scraper = Scraper(auth.session, auth)
+    course = scraper.create_dataclass(int(course_id))
+    MoodleDatabase().add_course(course)
+    return json.dumps(asdict(course), cls=MoodleJsonEncoder)
+
+
+@action("db-check-course")
+def arg_db_check_course(*var):
+    return MoodleDatabase().check_database_for_course_id(int(var[0]))
 
 
 if __name__ == "__main__":
