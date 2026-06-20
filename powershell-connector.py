@@ -20,6 +20,15 @@ class MoodleJsonEncoder(json.JSONEncoder):
             return obj.value
         return super().default(obj)
 
+actions = {}
+
+
+def action(name):
+    def decorator(func):
+        actions[name] = func
+        return func
+    return decorator
+
 
 def authenticated(func):
     @wraps(func)
@@ -30,11 +39,13 @@ def authenticated(func):
     return wrapper
 
 
+@action("sessionvalid")
 @authenticated
 def arg_session_valid(auth):
     return auth.is_session_valid()
 
 
+@action("get-course")
 @authenticated
 def arg_course(auth, course_id):
     scraper = Scraper(auth.session, auth)
@@ -42,18 +53,12 @@ def arg_course(auth, course_id):
     return json.dumps(asdict(course), cls=MoodleJsonEncoder)
 
 
+@action("login")
 def arg_login(*var):
     moodle_credentials = MoodleCredentials(var[0], var[1])
     moodle_auth = MoodleAuth(Session(), moodle_credentials=moodle_credentials)
     moodle_session = moodle_auth.login()
     return moodle_session.login_cookies["MoodleSession"]
-
-
-actions = {
-    "sessionvalid": arg_session_valid,
-    "login": arg_login,
-    "course": arg_course
-}
 
 
 if __name__ == "__main__":
