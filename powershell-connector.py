@@ -12,6 +12,9 @@ from MoodleDownloader.MoodleDownloader import (
     MoodleDatabase,
     Scraper
 )
+from MoodleDownloader.MoodleDownloader.exceptions import (
+    MoodleCourseNotFound
+)
 
 
 class MoodleJsonEncoder(json.JSONEncoder):
@@ -93,7 +96,13 @@ def arg_db_sync(auth):
     for course_info in available_courses:
         course_id = int(course_info['id'])
         if not db.check_database_for_course_id(course_id):
-            course_obj = scraper.create_dataclass(course_id)
+            try:
+                course_obj = scraper.create_dataclass(course_id)
+            except MoodleCourseNotFound:
+                continue # Just ignore it for now
+            except AttributeError:
+                continue # I've got ABSOLUTELY no idea where this comes from, and I'm too tired to look at it. Probably from that one course with a topic that has a dependency (isn't that the powershell module aka this one?)
+
             db.add_course(course_obj)
             added_courses.append(asdict(course_obj))
 
