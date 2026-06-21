@@ -79,6 +79,9 @@ if (-not (Test-Path $credFile)) {
 $credentials = Get-MoodleCredentials
 $needsAuth = $false
 
+# Pre-fetch indexed courses to avoid repeated calls
+$indexedCourses = Get-IndexedCourses
+
 # Check if credentials file is older than 24 hours
 $lastUpdate = (Get-Item $credFile).LastWriteTime
 if ((Get-Date) - $lastUpdate -gt (New-TimeSpan -Days 1)) {
@@ -90,9 +93,8 @@ if ((Get-Date) - $lastUpdate -gt (New-TimeSpan -Days 1)) {
 if (Test-Path $RootPath) {
     $folders = Get-ChildItem -Path $RootPath -Directory
     foreach ($f in $folders) {
-        if ($f.Name -match '^(\d+)\s*-') {
+        if ($f.Name -match '^(\d+)') {
             $courseNum = [int]$matches[1]
-            $indexedCourses = Get-IndexedCourses
             if (-not ($indexedCourses | Where-Object { $_.CourseNumber -eq $courseNum })) {
                 Write-Host "New unindexed course folder detected: $($f.Name). Updating index..." -ForegroundColor Yellow
                 $needsAuth = $true
@@ -112,6 +114,8 @@ if ($needsAuth) {
     Write-Host "Authenticating and updating credentials..." -ForegroundColor Magenta
     Update-MoodleCredentials -Credentials $credentials
     $credentials = Get-MoodleCredentials
+    # Refresh index after authentication in case new courses were added/updated
+    $indexedCourses = Get-IndexedCourses
 } else {
     Write-Host "Session is valid and recent. Skipping login." -ForegroundColor Green
 }
@@ -126,19 +130,33 @@ $sessionHeader = Get-MoodleSessionHeader -Credentials $credentials
 $folders = Get-ChildItem -Path $RootPath -Directory
 
 foreach ($folder in $folders) {
-    if ($folder.Name -notmatch '^(\d+)\s*-') { continue }
+    if ($folder.Name -notmatch '^(\d+)') { continue }
 
-    # Re-match to ensure $matches is set for this iteration
-    if ($folder.Name -match '^(\d+)\s*-') {
+    # Extract course number
+    if ($folder.Name -match '^(\d+)') {
         $courseNum = [int]$matches[1]
     } else { continue }
 
-    $courses = Get-IndexedCourses
-    $course = $courses | Where-Object { $_.CourseNumber -eq $courseNum }
+    $course = $indexedCourses | Where-Object { $_.CourseNumber -eq $courseNum }
 
     if ($null -eq $course) {
         Write-Host "Course $courseNum not found in index. Skipping folder $($folder.Name)." -ForegroundColor Gray
         continue
+    }
+
+    # Ensure folder name is correct: "Number - Title"
+    $expectedName = "$($course.CourseNumber) - $($course.Title)"
+    $currentCoursePath = $folder.FullName
+
+    if ($folder.Name -ne $expectedName) {
+        Write-Host "Updating folder name: $($folder.Name) -> $expectedName" -ForegroundColor Yellow
+        try {
+            Rename-Item -Path $currentCoursePath -NewName $expectedName -Force -ErrorAction Stop
+            $currentCoursePath = Join-Path $folder.Parent.FullName $expectedName
+        } catch {
+            Write-Host "Failed to rename folder $($folder.Name): $($_.Exception.Message)" -ForegroundColor Yellow
+            # Continue with original path if rename fails
+        }
     }
 
     Write-Host "Synchronizing Course: $($course.Title) (ID: $($course.Id))" -ForegroundColor White
@@ -146,7 +164,7 @@ foreach ($folder in $folders) {
     foreach ($topic in $course.Topics) {
         if ($null -eq $topic) { continue }
 
-        $topicPath = Join-Path $folder.FullName ($topic.Title -replace ':$', '')
+        $topicPath = Join-Path $currentCoursePath ($topic.Title -replace ':$', '')
         if (-not (Test-Path $topicPath)) {
             New-Item -ItemType Directory -Path $topicPath -Force | Out-Null
         }
