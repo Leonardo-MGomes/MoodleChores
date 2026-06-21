@@ -80,6 +80,23 @@ def arg_db_index_course(auth, course_id):
     return json.dumps(asdict(course), cls=MoodleJsonEncoder)
 
 
+@action("db-sync")
+@authenticated
+def arg_db_sync(auth):
+    scraper = Scraper(auth.session, auth)
+    db = MoodleDatabase()
+    available_courses = scraper.get_available_courses()
+
+    added_courses = []
+    for course_info in available_courses:
+        course_id = int(course_info['id'])
+        if not db.check_database_for_course_id(course_id):
+            course_obj = scraper.create_dataclass(course_id)
+            db.add_course(course_obj)
+            added_courses.append(asdict(course_obj))
+
+    return json.dumps(added_courses, cls=MoodleJsonEncoder)
+
 @action("db-check-course")
 def arg_db_check_course(*var):
     return MoodleDatabase().check_database_for_course_id(int(var[0]))

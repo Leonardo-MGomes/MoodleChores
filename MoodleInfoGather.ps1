@@ -117,3 +117,17 @@ function Add-IndexedCourse {
     )
     (python ./powershell-connector.py db-index-course ($Credentials.session | ConvertFrom-SecureString -AsPlainText) $CourseId) | ConvertFrom-Json
 }
+
+function Sync-IndexedCourses {
+    <#
+    .SYNOPSIS
+        Automatically updates the local index by scraping all courses the user is enrolled in.
+    #>
+    [CmdletBinding()]
+    [OutputType([psobject[]])]
+    param (
+        [Parameter(Mandatory)] [psobject]$Credentials
+    )
+    $out = (python ./powershell-connector.py db-sync ($Credentials.session | ConvertFrom-SecureString -AsPlainText)) | ConvertFrom-Json
+    return $out
+}

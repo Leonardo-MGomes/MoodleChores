@@ -110,6 +110,7 @@ if (Test-Path $RootPath) {
             $courseNum = [int]$matches[1]
             if (-not ($indexedCourses | Where-Object { $_.CourseNumber -eq $courseNum })) {
                 Write-Host "New unindexed course folder detected: $($f.Name). Updating index..." -ForegroundColor Yellow
+                Sync-IndexedCourses -Credentials $credentials
                 $needsAuth = $true
                 break
             }
