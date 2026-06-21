@@ -54,12 +54,25 @@ function Sync-MoodleResource {
             }
 
             $resourceName = Sanitize-FileName $resourceName
+            $destPath = Join-Path $TopicPath $resourceName
+
+            if (Test-Path $destPath) {
+                Write-Host "Resource already exists: $resourceName. Skipping." -ForegroundColor Gray
+                return
+            }
+
             Write-Host "Downloading Resource: $resourceName" -ForegroundColor White
-            Invoke-WebRequest -Uri $url -Headers $SessionHeader -OutFile (Join-Path $TopicPath $resourceName) -ErrorAction Stop
+            Invoke-WebRequest -Uri $url -Headers $SessionHeader -OutFile $destPath -ErrorAction Stop
         } else {
             # It's a webpage
-            Write-Host "Resource is a Webpage, creating .url link." -ForegroundColor White
             $linkPath = Join-Path $TopicPath "$($Resource.Name).url"
+
+            if (Test-Path $linkPath) {
+                Write-Host "URL link already exists: $($Resource.Name). Skipping." -ForegroundColor Gray
+                return
+            }
+
+            Write-Host "Resource $($Resource.Name) is a Webpage, creating .url link." -ForegroundColor White
             Set-Content -LiteralPath $linkPath -Value "[InternetShortcut]`r`nURL=$url"
         }
     } catch {
