@@ -35,6 +35,8 @@ def authenticated(func):
     def wrapper(*var):
         moodle_session = MoodleSession(login_cookies={"MoodleSession": var[0]})
         auth = MoodleAuth(Session(), moodle_session=moodle_session)
+        if moodle_session.sesskey is None:
+            moodle_session.sesskey = auth._extract_sesskey()
         return func(auth, *var[1:])
     return wrapper
 
