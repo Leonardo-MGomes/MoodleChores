@@ -62,7 +62,7 @@ function Get-MoodleCourse {
         [Parameter(Mandatory)] [psobject]$Credentials,
         [Parameter(Mandatory)] [int]$CourseId
     )
-    $out = python ./powershell-connector.py get-course ($Credentials.session | ConvertFrom-SecureString -AsPlainText) $CourseId
+    $out = (python ./powershell-connector.py get-course ($Credentials.session | ConvertFrom-SecureString -AsPlainText) $CourseId)
     Write-Verbose $out
     $out | ConvertFrom-Json
 }
@@ -88,7 +88,7 @@ function Get-IndexedCourse {
     param (
         [Parameter(Mandatory)] [int]$CourseId
     )
-    Get-IndexedCourses | Where-Object { $_.Id -eq $CourseId }
+    Get-IndexedCourses | Where-Object { $_.Id -eq $CourseId } # Getting all the courses and filtering is worse than just using the connector for the one course; fix later
 }
 
 function Test-IndexedCourse {

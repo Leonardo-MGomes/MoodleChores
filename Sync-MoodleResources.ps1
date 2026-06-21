@@ -10,13 +10,17 @@ param (
 . .\MoodleInfoGather.ps1
 
 function Get-MoodleSessionHeader {
-    param ([psobject]$Credentials)
-    $sessionValue = $Credentials.session | ConvertFrom-SecureString -AsPlainText
-    return @{"Cookie" = "MoodleSession=$sessionValue"}
+    param (
+        [psobject]$Credentials
+        )
+    $session = $Credentials.session | ConvertFrom-SecureString -AsPlainText
+    return @{"Cookie" = "MoodleSession=$session"}
 }
 
 function Sanitize-FileName {
-    param ([string]$FileName)
+    param (
+        [string]$FileName
+        )
     $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
     foreach ($char in $invalidChars) {
         $FileName = $FileName.Replace($char, '_')
@@ -27,12 +31,11 @@ function Sanitize-FileName {
 function Sync-MoodleResource {
     param (
         [psobject]$Resource,
-        [string]$BaseUrl,
         [hashtable]$SessionHeader,
         [string]$TopicPath
     )
 
-    $url = "$BaseUrl/mod/resource/view.php?id=$($Resource.Id)"
+    $url = "$MoodleBaseUrl/mod/resource/view.php?id=$($Resource.Id)"
 
     try {
         $webResourceHeaders = Invoke-WebRequest -Uri $url -Headers $SessionHeader -Method Head -ErrorAction Stop
@@ -82,11 +85,10 @@ function Sync-MoodleResource {
 
 Write-Host "Starting Moodle synchronization..." -ForegroundColor Cyan
 
-# 1. Authentication and Session Management
+# Authentication and Session Management
 $credFile = "MoodleCredentials.xml"
 if (-not (Test-Path $credFile)) {
-    Write-Error "Credentials file $credFile not found. Please run Set-MoodleCredentials first."
-    exit 1
+    Set-MoodleCredentials
 }
 
 $credentials = Get-MoodleCredentials
@@ -105,11 +107,11 @@ if ((Get-Date) - $lastUpdate -gt (New-TimeSpan -Days 1)) {
 # Check for folders that are not yet indexed
 if (Test-Path $RootPath) {
     $folders = Get-ChildItem -Path $RootPath -Directory
-    foreach ($f in $folders) {
-        if ($f.Name -match '^(\d+)') {
-            $courseNum = [int]$matches[1]
+    foreach ($folder in $folders) {
+        if ($folder.Name -match '^(\d+)') {
+            $courseNum = [int]$Matches[1]
             if (-not ($indexedCourses | Where-Object { $_.CourseNumber -eq $courseNum })) {
-                Write-Host "New unindexed course folder detected: $($f.Name). Updating index..." -ForegroundColor Yellow
+                Write-Host "New unindexed course folder detected: $($folder.Name). Updating index..." -ForegroundColor Yellow
                 Sync-IndexedCourses -Credentials $credentials
                 $indexedCourses = Get-IndexedCourses # Since we're indexing new Courses anyways
                 break
@@ -128,16 +130,21 @@ if ($needsAuth) {
     Write-Host "Authenticating and updating credentials..." -ForegroundColor Magenta
     Update-MoodleCredentials -Credentials $credentials
     $credentials = Get-MoodleCredentials
-    # Refresh index after authentication in case new courses were added/updated
-    $indexedCourses = Get-IndexedCourses
 } else {
     Write-Host "Session is valid and recent. Skipping login." -ForegroundColor Green
 }
 
-# 2. Synchronization Loop
+# Synchronization Loop
 if (-not (Test-Path $RootPath)) {
-    Write-Error "Root path $RootPath does not exist."
-    exit 1
+    Write-Warning "Root path $RootPath does not exist."
+    $createRootPath = (Read-Host "Create $RootPath? ([y]/n): ").ToLower().Trim()
+    if ($createRootPath -notin "y", "") {
+        Write-Error "Aborting..."
+        exit 1
+    }
+    New-Item -Path $RootPath -ItemType Directory -Force | Out-Null
+    Write-Host "Successfully created: $RootPath" -ForegroundColor Green
+    # TODO: Since this folder doesn't yet have any subfolders, the script has nothing to go get. Maybe add a auto-get or something?
 }
 
 $sessionHeader = Get-MoodleSessionHeader -Credentials $credentials
@@ -149,7 +156,10 @@ foreach ($folder in $folders) {
     # Extract course number
     if ($folder.Name -match '^(\d+)') {
         $courseNum = [int]$matches[1]
-    } else { continue }
+    }
+    else {
+        continue
+    }
 
     $course = $indexedCourses | Where-Object { $_.CourseNumber -eq $courseNum }
 
@@ -187,7 +197,7 @@ foreach ($folder in $folders) {
             if ($null -eq $resource) { continue }
             if ($resource.Type -ne 'resource') { continue }
 
-            Sync-MoodleResource -Resource $resource -BaseUrl $MoodleBaseUrl -SessionHeader $sessionHeader -TopicPath $topicPath
+            Sync-MoodleResource -Resource $resource -SessionHeader $sessionHeader -TopicPath $topicPath
         }
     }
 }

@@ -81,7 +81,8 @@ def arg_db_courses(*var):
 def arg_db_index_course(auth, course_id):
     scraper = Scraper(auth.session, auth)
     course = scraper.create_dataclass(int(course_id))
-    MoodleDatabase().add_course(course)
+    db = MoodleDatabase()
+    db.add_course(course)
     return json.dumps(asdict(course), cls=MoodleJsonEncoder)
 
 
@@ -110,7 +111,9 @@ def arg_db_sync(auth):
 
 @action("db-check-course")
 def arg_db_check_course(*var):
-    return MoodleDatabase().check_database_for_course_id(int(var[0]))
+    db = MoodleDatabase()
+    course_check = db.check_database_for_course_id(int(var[0]))
+    return course_check
 
 
 if __name__ == "__main__":
