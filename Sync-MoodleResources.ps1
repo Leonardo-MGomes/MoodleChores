@@ -86,16 +86,11 @@ function Sync-MoodleResource {
 Write-Host "Starting Moodle synchronization..." -ForegroundColor Cyan
 
 # Authentication and Session Management
+$needsAuth = $false
 $credFile = "MoodleCredentials.xml"
 if (-not (Test-Path $credFile)) {
     Set-MoodleCredentials
 }
-
-$credentials = Get-MoodleCredentials
-$needsAuth = $false
-
-# Pre-fetch indexed courses to avoid repeated calls
-$indexedCourses = Get-IndexedCourses
 
 # Check if credentials file is older than 24 hours
 $lastUpdate = (Get-Item $credFile).LastWriteTime
@@ -103,6 +98,11 @@ if ((Get-Date) - $lastUpdate -gt (New-TimeSpan -Days 1)) {
     Write-Host "Credentials are older than 24 hours. Updating session..." -ForegroundColor Yellow
     $needsAuth = $true
 }
+
+$credentials = Get-MoodleCredentials
+
+# Pre-fetch indexed courses to avoid repeated calls
+$indexedCourses = Get-IndexedCourses
 
 # Check for folders that are not yet indexed
 if (Test-Path $RootPath) {
