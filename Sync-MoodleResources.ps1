@@ -1,5 +1,9 @@
-# Sync-MoodleResources.ps1
-# Synchronizes local course folders with Moodle resources based on the local index.
+<# Scriptname: Sync-MoodleResources.ps1
+Author: Leonardo Miranda Gomes
+Date: 2026-06-22
+Version: 1.0
+Description: Synchronisiert lokale Kursordner mit Moodle-Ressourcen basierend auf einem lokalen SQLite-Index.
+#>
 
 param (
     [string]$RootPath = "$HOME/Documents/BBB Moodle Material",

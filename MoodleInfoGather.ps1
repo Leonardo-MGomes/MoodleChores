@@ -1,4 +1,9 @@
-#Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+<# Scriptname: MoodleInfoGather.ps1
+Author: Leonardo Miranda Gomes
+Date: 2026-06-22
+Version: 1.0
+Description: Funktionen-Bibliothek zur Kapselung des Python-Connectors und der XML-Credential-Verwaltung.
+#>
 ./.venv/Scripts/Activate.ps1
 
 function Get-MoodleCredentials {
