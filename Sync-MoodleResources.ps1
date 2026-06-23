@@ -157,11 +157,11 @@ if ($SyncAll) {
     Write-Host "SyncAll is true, Indexing all Courses" -ForegroundColor Yellow
     Sync-IndexedCourses -Credentials $credentials
     $indexedCourses = Get-IndexedCourses
-    foreach ($course in $indexedCourses.CourseNumber) {
+    foreach ($course in $indexedCourses) {
         $coursePath = Join-Path $RootPath $course.CourseNumber
-        $coursePathWithName = "$coursePath - $($course.Name)"
-        if (-not (Test-Path $coursePath || Test-Path $coursePathWithName)) {
-            New-Item -Path $coursePath -ItemType Directory | Out-Null
+        $coursePathWithTitle = "$coursePath - $($course.Title)"
+        if (-not ((Test-Path $coursePath) -or (Test-Path $coursePathWithTitle))) {
+            New-Item -Path $coursePathWithTitle -ItemType Directory | Out-Null
         }
     }
 }
@@ -172,9 +172,9 @@ if ($courseNumber) {
     $course = Get-IndexedCourses | Where-Object $_.CourseNumber -Is $courseNumber
     
     $coursePath = Join-Path $RootPath $course.CourseNumber
-    $coursePathWithName = "$coursePath - $($course.Name)"
-    if (-not (Test-Path $coursePath || Test-Path $coursePathWithName)) {
-        New-Item -Path $coursePath -ItemType Directory | Out-Null
+    $coursePathWithTitle = "$coursePath - $($course.Title)"
+    if (-not ((Test-Path $coursePath) -or (Test-Path $coursePathWithTitle))) {
+        New-Item -Path $coursePathWithTitle -ItemType Directory | Out-Null
     }
 }
 
