@@ -7,7 +7,8 @@ Description: Synchronisiert lokale Kursordner mit Moodle-Ressourcen basierend au
 
 param (
     [string]$RootPath = "$HOME/Documents/BBB Moodle Material",
-    [string]$MoodleBaseUrl = "https://moodle.bbbaden.ch"
+    [string]$MoodleBaseUrl = "https://moodle.bbbaden.ch",
+    [switch]$SyncAll
 )
 
 # Dot-source the gatherer to use its functions
@@ -149,7 +150,19 @@ if (-not (Test-Path $RootPath)) {
     }
     New-Item -Path $RootPath -ItemType Directory -Force | Out-Null
     Write-Host "Successfully created: $RootPath" -ForegroundColor Green
-    # TODO: Since this folder doesn't yet have any subfolders, the script has nothing to go get. Maybe add a auto-get or something?
+}
+
+if ($SyncAll) {
+    Write-Host "SyncAll is true, Indexing all Courses" -ForegroundColor Yellow
+    Sync-IndexedCourses -Credentials $credentials
+    $indexedCourses = Get-IndexedCourses
+    foreach ($course in $indexedCourses.CourseNumber) {
+        $coursePath = Join-Path $RootPath $course.CourseNumber
+        $coursePathWithName = "$coursePath - $($course.Name)"
+        if (-not (Test-Path $coursePath || Test-Path $coursePathWithName)) {
+            New-Item -Path $coursePath -ItemType Directory
+        }
+    }
 }
 
 $sessionHeader = Get-MoodleSessionHeader -Credentials $credentials
