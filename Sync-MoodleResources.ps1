@@ -161,7 +161,7 @@ if ($SyncAll) {
         $coursePath = Join-Path $RootPath $course.CourseNumber
         $coursePathWithName = "$coursePath - $($course.Name)"
         if (-not (Test-Path $coursePath || Test-Path $coursePathWithName)) {
-            New-Item -Path $coursePath -ItemType Directory
+            New-Item -Path $coursePath -ItemType Directory | Out-Null
         }
     }
 }
@@ -174,7 +174,7 @@ if ($courseNumber) {
     $coursePath = Join-Path $RootPath $course.CourseNumber
     $coursePathWithName = "$coursePath - $($course.Name)"
     if (-not (Test-Path $coursePath || Test-Path $coursePathWithName)) {
-        New-Item -Path $coursePath -ItemType Directory
+        New-Item -Path $coursePath -ItemType Directory | Out-Null
     }
 }
 
