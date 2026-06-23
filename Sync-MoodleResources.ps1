@@ -41,7 +41,7 @@ function Sync-MoodleResource {
         [string]$TopicPath
     )
 
-    $url = "$MoodleBaseUrl/mod/resource/view.php?id=$($Resource.Id)"
+    $url = "$MoodleBaseUrl/mod/$($Resource.Type)/view.php?id=$($Resource.Id)"
 
     try {
         $webResourceHeaders = Invoke-WebRequest -Uri $url -Headers $SessionHeader -Method Head -ErrorAction Stop
@@ -226,7 +226,7 @@ foreach ($folder in $folders) {
 
         foreach ($resource in $topic.Resources) {
             if ($null -eq $resource) { continue }
-            if ($resource.Type -ne 'resource') { continue }
+            if (($resource.Type -ne 'resource') -and ($resource.Type -ne 'url')) { continue }
 
             Sync-MoodleResource -Resource $resource -SessionHeader $sessionHeader -TopicPath $topicPath
         }
