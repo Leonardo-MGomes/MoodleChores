@@ -43,8 +43,10 @@ function Set-MoodleCredentials {
         [Parameter(Mandatory)] [string]$Username,
         [Parameter(Mandatory)] [SecureString]$Password
     )
-    $session = (python ./powershell-connector.py login $Username ($Password | ConvertFrom-SecureString -AsPlainText)) | ConvertTo-SecureString -AsPlainText
-    Export-Clixml -Path MoodleCredentials.xml -InputObject @{username = $Username; password = $Password; session = $session}
+    $out = (python ./powershell-connector.py login $Username ($Password | ConvertFrom-SecureString -AsPlainText)) | ConvertFrom-Json
+    $session = $out.session | ConvertTo-SecureString -AsPlainText
+    $sesskey = $out.sesskey | ConvertTo-SecureString -AsPlainText
+    Export-Clixml -Path MoodleCredentials.xml -InputObject @{username = $Username; password = $Password; session = $session; sesskey = $sesskey}
 }
 
 function Update-MoodleCredentials {
@@ -56,7 +58,9 @@ function Update-MoodleCredentials {
     param (
         [Parameter(Mandatory)] [psobject]$Credentials
     )
-    $Credentials.session = (python ./powershell-connector.py login $Credentials.username ($Credentials.password | ConvertFrom-SecureString -AsPlainText)) | ConvertTo-SecureString -AsPlainText
+    $out = (python ./powershell-connector.py login $Credentials.username ($Credentials.password | ConvertFrom-SecureString -AsPlainText)) | ConvertFrom-Json
+    $Credentials.session = $out.session | ConvertTo-SecureString -AsPlainText
+    $Credentials.sesskey = $out.sesskey | ConvertTo-SecureString -AsPlainText
     Export-Clixml -Path MoodleCredentials.xml -InputObject $Credentials
 }
 
@@ -149,6 +153,6 @@ function Sync-IndexedCourses {
     param (
         [Parameter(Mandatory)] [psobject]$Credentials
     )
-    $out = (python ./powershell-connector.py db-sync ($Credentials.session | ConvertFrom-SecureString -AsPlainText)) | ConvertFrom-Json
+    $out = (python ./powershell-connector.py db-sync ($Credentials.session | ConvertFrom-SecureString -AsPlainText) ($Credentials.sesskey | ConvertFrom-SecureString -AsPlainText)) | ConvertFrom-Json
     return $out
 }

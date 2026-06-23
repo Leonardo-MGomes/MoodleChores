@@ -66,7 +66,8 @@ def arg_login(*var):
     moodle_session = moodle_auth.login()
     if moodle_session.sesskey is None:
             moodle_session.sesskey = moodle_auth._extract_sesskey()
-    return moodle_session.login_cookies["MoodleSession"]
+    session = moodle_session.login_cookies["MoodleSession"]
+    return json.dumps({"session": session, "sesskey": moodle_session.sesskey})
 
 
 @action("db-courses")
@@ -88,7 +89,9 @@ def arg_db_index_course(auth, course_id):
 
 @action("db-sync")
 @authenticated
-def arg_db_sync(auth):
+def arg_db_sync(auth, sesskey = None):
+    if sesskey is not None:
+        auth.moodle_session.sesskey = sesskey
     scraper = Scraper(auth.session, auth)
     db = MoodleDatabase()
     available_courses = scraper.get_available_courses()
