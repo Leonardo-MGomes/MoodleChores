@@ -4,7 +4,23 @@ Date: 2026-06-22
 Version: 1.0
 Description: Funktionen-Bibliothek zur Kapselung des Python-Connectors und der XML-Credential-Verwaltung.
 #>
-./.venv/Scripts/Activate.ps1
+
+$installPackages = $false
+if (-not (Test-Path -Path ".venv")) {
+    (python -m venv .venv)
+    $installPackages = $true
+}
+if ($IsWindows) {
+    $venvPath = "./.venv/Scripts/Activate.ps1"
+} elseif ($IsLinux || $IsMacOS) {
+    $venvPath = "./.venv/bin/Activate.ps1"
+}
+
+. $venvPath
+
+if ($installPackages) {
+    (pip install -r ./requirements.txt)
+}
 
 function Get-MoodleCredentials {
     <#
