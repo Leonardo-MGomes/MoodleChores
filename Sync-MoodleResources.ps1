@@ -8,7 +8,8 @@ Description: Synchronisiert lokale Kursordner mit Moodle-Ressourcen basierend au
 param (
     [string]$RootPath = "$HOME/Documents/BBB Moodle Material",
     [string]$MoodleBaseUrl = "https://moodle.bbbaden.ch",
-    [switch]$SyncAll
+    [switch]$SyncAll,
+    [string]$courseNumber
 )
 
 # Dot-source the gatherer to use its functions
@@ -162,6 +163,18 @@ if ($SyncAll) {
         if (-not (Test-Path $coursePath || Test-Path $coursePathWithName)) {
             New-Item -Path $coursePath -ItemType Directory
         }
+    }
+}
+
+if ($courseNumber) {
+    Write-Host "Checking for Course $courseNumber specifically" -ForegroundColor Yellow
+    Sync-IndexedCourses -Credentials $credentials
+    $course = Get-IndexedCourses | Where-Object $_.CourseNumber -Is $courseNumber
+    
+    $coursePath = Join-Path $RootPath $course.CourseNumber
+    $coursePathWithName = "$coursePath - $($course.Name)"
+    if (-not (Test-Path $coursePath || Test-Path $coursePathWithName)) {
+        New-Item -Path $coursePath -ItemType Directory
     }
 }
 
