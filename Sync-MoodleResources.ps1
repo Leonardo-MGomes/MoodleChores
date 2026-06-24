@@ -1,6 +1,6 @@
 <# Scriptname: Sync-MoodleResources.ps1
 Author: Leonardo Miranda Gomes
-Date: 2026-06-22
+Date: 23.06.2026
 Version: 1.0
 Description: Synchronisiert lokale Kursordner mit Moodle-Ressourcen basierend auf einem lokalen SQLite-Index.
 #>

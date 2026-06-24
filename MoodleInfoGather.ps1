@@ -1,6 +1,6 @@
 <# Scriptname: MoodleInfoGather.ps1
 Author: Leonardo Miranda Gomes
-Date: 2026-06-22
+Date: 23.06.2026
 Version: 1.0
 Description: Funktionen-Bibliothek zur Kapselung des Python-Connectors und der XML-Credential-Verwaltung.
 #>
